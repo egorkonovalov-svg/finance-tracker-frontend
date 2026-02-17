@@ -1,10 +1,11 @@
 import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useFonts, Outfit_600SemiBold, Outfit_700Bold } from '@expo-google-fonts/outfit';
 import { DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold } from '@expo-google-fonts/dm-sans';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import 'react-native-reanimated';
 
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
@@ -12,7 +13,9 @@ import { AppProvider } from '@/context/AppContext';
 
 SplashScreen.preventAutoHideAsync();
 
-function InnerLayout() {
+const ONBOARDED_KEY = '@fintrack_onboarded';
+
+function InnerLayout({ hasOnboarded }: { hasOnboarded: boolean }) {
   const { isDark, colors } = useTheme();
 
   const navTheme = isDark
@@ -22,6 +25,7 @@ function InnerLayout() {
   return (
     <NavThemeProvider value={navTheme}>
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="welcome" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="transaction/[id]"
@@ -44,6 +48,7 @@ function InnerLayout() {
           }}
         />
       </Stack>
+      {!hasOnboarded && <Redirect href="/welcome" />}
       <StatusBar style={isDark ? 'light' : 'dark'} />
     </NavThemeProvider>
   );
@@ -58,16 +63,26 @@ export default function RootLayout() {
     DMSans_600SemiBold,
   });
 
-  useEffect(() => {
-    if (fontsLoaded) SplashScreen.hideAsync();
-  }, [fontsLoaded]);
+  const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null);
 
-  if (!fontsLoaded) return null;
+  useEffect(() => {
+    AsyncStorage.getItem(ONBOARDED_KEY).then((v) => {
+      setHasOnboarded(v === '1');
+    });
+  }, []);
+
+  const ready = fontsLoaded && hasOnboarded !== null;
+
+  useEffect(() => {
+    if (ready) SplashScreen.hideAsync();
+  }, [ready]);
+
+  if (!ready) return null;
 
   return (
     <ThemeProvider>
       <AppProvider>
-        <InnerLayout />
+        <InnerLayout hasOnboarded={hasOnboarded} />
       </AppProvider>
     </ThemeProvider>
   );
