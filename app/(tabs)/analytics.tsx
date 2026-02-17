@@ -7,9 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '@/context/ThemeContext';
 import { useApp } from '@/context/AppContext';
-import { useCurrency } from '@/hooks/useCurrency';
 import { GlassCard } from '@/components/ui/glass-card';
-import { FontFamily, FontSize, Palette, Radius, Spacing } from '@/constants/theme';
+import { FontFamily, FontSize, Palette, Radius, Spacing, formatCurrency } from '@/constants/theme';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -18,8 +17,7 @@ type Period = 'month' | 'quarter' | 'year';
 export default function AnalyticsScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
-  const { transactions, categories, stats } = useApp();
-  const { convertAndFormat, convert } = useCurrency();
+  const { transactions, categories, currency, stats } = useApp();
   const [period, setPeriod] = useState<Period>('month');
 
   // ── Filter transactions by period ──────────────────────────────────────
@@ -47,18 +45,17 @@ export default function AnalyticsScreen() {
     });
     return Object.entries(map)
       .sort((a, b) => b[1] - a[1])
-      .map(([name, amountUSD]) => {
+      .map(([name, amount]) => {
         const cat = categories.find((c) => c.name === name);
         return {
           name,
-          amount: convert(amountUSD),
-          amountUSD,
+          amount,
           color: cat?.color ?? '#6B7280',
           legendFontColor: colors.textSecondary,
           legendFontSize: 12,
         };
       });
-  }, [periodTxs, categories, colors, convert]);
+  }, [periodTxs, categories, colors]);
 
   // ── Daily bar data (last 7 days) ───────────────────────────────────────
   const barData = useMemo(() => {
@@ -74,8 +71,8 @@ export default function AnalyticsScreen() {
       days.push(shortDay);
 
       const dayTxs = transactions.filter((tx) => tx.date.slice(0, 10) === dateStr);
-      incomeVals.push(convert(dayTxs.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0)));
-      expenseVals.push(convert(dayTxs.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0)));
+      incomeVals.push(dayTxs.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0));
+      expenseVals.push(dayTxs.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0));
     }
 
     return {
@@ -84,7 +81,7 @@ export default function AnalyticsScreen() {
         { data: expenseVals, color: () => Palette.red },
       ],
     };
-  }, [transactions, convert]);
+  }, [transactions]);
 
   const chartConfig = {
     backgroundGradientFrom: 'transparent',
@@ -139,7 +136,7 @@ export default function AnalyticsScreen() {
               <Ionicons name="arrow-down-circle" size={22} color={Palette.emerald} />
               <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Income</Text>
               <Text style={[styles.summaryValue, { color: Palette.emerald }]}>
-                {convertAndFormat(totalIncome)}
+                {formatCurrency(totalIncome, currency)}
               </Text>
             </View>
             <View style={[styles.summaryDivider, { backgroundColor: colors.separator }]} />
@@ -147,7 +144,7 @@ export default function AnalyticsScreen() {
               <Ionicons name="arrow-up-circle" size={22} color={Palette.red} />
               <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Expenses</Text>
               <Text style={[styles.summaryValue, { color: Palette.red }]}>
-                {convertAndFormat(totalExpenses)}
+                {formatCurrency(totalExpenses, currency)}
               </Text>
             </View>
           </View>
@@ -206,7 +203,7 @@ export default function AnalyticsScreen() {
                   </View>
                   <Text style={[styles.topCatName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
                   <Text style={[styles.topCatAmount, { color: colors.textSecondary }]}>
-                    {convertAndFormat(item.amountUSD)}
+                    {formatCurrency(item.amount, currency)}
                   </Text>
                 </View>
               );

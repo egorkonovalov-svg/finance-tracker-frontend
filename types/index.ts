@@ -76,15 +76,6 @@ export interface TransactionStats {
   daily: { date: string; income: number; expense: number }[];
 }
 
-// ─── Exchange Rates ──────────────────────────────────────────────────────────
-
-export interface ExchangeRatesResponse {
-  result: string;
-  base_code: string;
-  rates: Record<string, number>;
-  time_last_update_unix: number;
-}
-
 // ─── Settings ────────────────────────────────────────────────────────────────
 
 export type SupportedCurrency = 'USD' | 'EUR' | 'RUB' | 'GBP' | 'JPY';
