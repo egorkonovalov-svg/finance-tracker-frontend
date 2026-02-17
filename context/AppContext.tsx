@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useReducer } 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { transactionsService } from '@/services/transactions';
 import { categoriesService } from '@/services/categories';
+import { fetchExchangeRates, FALLBACK_RATES } from '@/services/exchange-rates';
 import type {
   Category,
   CreateCategoryPayload,
@@ -21,6 +22,8 @@ interface AppState {
   categories: Category[];
   stats: TransactionStats | null;
   currency: SupportedCurrency;
+  exchangeRates: Record<string, number>;
+  ratesLoading: boolean;
   loading: boolean;
   error: string | null;
   page: number;
@@ -32,6 +35,8 @@ const initialState: AppState = {
   categories: [],
   stats: null,
   currency: 'USD',
+  exchangeRates: FALLBACK_RATES,
+  ratesLoading: true,
   loading: false,
   error: null,
   page: 1,
@@ -53,7 +58,9 @@ type Action =
   | { type: 'UPDATE_CATEGORY'; cat: Category }
   | { type: 'REMOVE_CATEGORY'; id: string }
   | { type: 'SET_STATS'; stats: TransactionStats }
-  | { type: 'SET_CURRENCY'; currency: SupportedCurrency };
+  | { type: 'SET_CURRENCY'; currency: SupportedCurrency }
+  | { type: 'SET_EXCHANGE_RATES'; rates: Record<string, number> }
+  | { type: 'SET_RATES_LOADING'; loading: boolean };
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
@@ -83,6 +90,10 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, stats: action.stats };
     case 'SET_CURRENCY':
       return { ...state, currency: action.currency };
+    case 'SET_EXCHANGE_RATES':
+      return { ...state, exchangeRates: action.rates, ratesLoading: false };
+    case 'SET_RATES_LOADING':
+      return { ...state, ratesLoading: action.loading };
     default:
       return state;
   }
@@ -207,6 +218,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_CURRENCY', currency: c });
     AsyncStorage.setItem(CURRENCY_KEY, c);
   }, []);
+
+  // ── Exchange Rates ─────────────────────────────────────────────────────
+
+  const loadExchangeRates = useCallback(async () => {
+    dispatch({ type: 'SET_RATES_LOADING', loading: true });
+    try {
+      const rates = await fetchExchangeRates();
+      dispatch({ type: 'SET_EXCHANGE_RATES', rates });
+    } catch {
+      dispatch({ type: 'SET_RATES_LOADING', loading: false });
+    }
+  }, []);
+
+  // Fetch rates on mount
+  useEffect(() => {
+    loadExchangeRates();
+  }, [loadExchangeRates]);
 
   // ── Refresh all ──────────────────────────────────────────────────────────
 

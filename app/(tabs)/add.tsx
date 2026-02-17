@@ -18,15 +18,17 @@ import * as Haptics from 'expo-haptics';
 
 import { useTheme } from '@/context/ThemeContext';
 import { useApp } from '@/context/AppContext';
+import { useCurrency } from '@/hooks/useCurrency';
 import { GlassCard } from '@/components/ui/glass-card';
 import { CategoryChip } from '@/components/category-chip';
-import { FontFamily, FontSize, Palette, Radius, Spacing, formatCurrency } from '@/constants/theme';
+import { FontFamily, FontSize, Palette, Radius, Spacing } from '@/constants/theme';
 import type { TransactionType } from '@/types';
 
 export default function AddTransactionScreen() {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
-  const { categories, currency, addTransaction } = useApp();
+  const { categories, addTransaction } = useApp();
+  const { symbol, currency, rate } = useCurrency();
 
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState('');
@@ -64,7 +66,7 @@ export default function AddTransactionScreen() {
     try {
       await addTransaction({
         type,
-        amount: parseFloat(amount),
+        amount: parseFloat(amount) / rate,
         currency,
         category: selectedCategory,
         note: note.trim() || undefined,
@@ -133,7 +135,7 @@ export default function AddTransactionScreen() {
             <Text style={[styles.label, { color: colors.textSecondary }]}>Amount</Text>
             <View style={styles.amountRow}>
               <Text style={[styles.currencySymbol, { color: accentColor }]}>
-                {currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'RUB' ? '₽' : currency}
+                {symbol}
               </Text>
               <TextInput
                 style={[styles.amountInput, { color: colors.text, borderBottomColor: accentColor }]}
