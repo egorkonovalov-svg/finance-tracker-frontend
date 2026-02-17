@@ -194,11 +194,37 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
   JPY: '¥',
 };
 
-export function formatCurrency(amount: number, currency: string = 'USD'): string {
-  const symbol = CURRENCY_SYMBOLS[currency] ?? currency;
-  const abs = Math.abs(amount);
-  const formatted = abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return amount < 0 ? `-${symbol}${formatted}` : `${symbol}${formatted}`;
+/** Currencies that conventionally have no decimal places */
+const ZERO_DECIMAL_CURRENCIES = new Set(['JPY', 'KRW', 'VND', 'ISK', 'HUF']);
+
+/**
+ * Format and optionally convert a USD amount into the target currency.
+ *
+ * @param amountUSD - The amount in USD (base currency)
+ * @param currency  - Target currency code (e.g. "EUR")
+ * @param rate      - Exchange rate from USD -> target. Defaults to 1 (no conversion).
+ */
+export function formatCurrency(amountUSD: number, currency: string = 'USD', rate: number = 1): string {
+  const converted = amountUSD * rate;
+
+  try {
+    // Use Intl.NumberFormat for locale-aware formatting with correct decimals
+    const decimals = ZERO_DECIMAL_CURRENCIES.has(currency) ? 0 : 2;
+    const formatter = new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+    return formatter.format(converted);
+  } catch {
+    // Fallback if Intl doesn't know the currency code
+    const symbol = CURRENCY_SYMBOLS[currency] ?? currency;
+    const abs = Math.abs(converted);
+    const decimals = ZERO_DECIMAL_CURRENCIES.has(currency) ? 0 : 2;
+    const formatted = abs.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    return converted < 0 ? `-${symbol}${formatted}` : `${symbol}${formatted}`;
+  }
 }
 
 // Legacy Fonts export for compatibility

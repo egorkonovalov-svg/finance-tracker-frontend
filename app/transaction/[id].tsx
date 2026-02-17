@@ -20,7 +20,8 @@ import { useTheme } from '@/context/ThemeContext';
 import { useApp } from '@/context/AppContext';
 import { GlassCard } from '@/components/ui/glass-card';
 import { CategoryChip } from '@/components/category-chip';
-import { FontFamily, FontSize, Palette, Radius, Spacing, formatCurrency } from '@/constants/theme';
+import { FontFamily, FontSize, Palette, Radius, Spacing } from '@/constants/theme';
+import { useCurrency } from '@/hooks/useCurrency';
 import type { TransactionType } from '@/types';
 
 export default function TransactionDetailScreen() {
@@ -28,13 +29,14 @@ export default function TransactionDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
-  const { transactions, categories, currency, updateTransaction, removeTransaction } = useApp();
+  const { transactions, categories, updateTransaction, removeTransaction } = useApp();
+  const { convertAndFormat, convert, rate } = useCurrency();
 
   const tx = transactions.find((t) => t.id === id);
 
   const [editing, setEditing] = useState(false);
   const [type, setType] = useState<TransactionType>(tx?.type ?? 'expense');
-  const [amount, setAmount] = useState(tx?.amount.toString() ?? '');
+  const [amount, setAmount] = useState(tx ? convert(tx.amount).toFixed(2) : '');
   const [selectedCategory, setSelectedCategory] = useState(tx?.category ?? '');
   const [note, setNote] = useState(tx?.note ?? '');
   const [date, setDate] = useState(tx ? new Date(tx.date) : new Date());
@@ -43,12 +45,12 @@ export default function TransactionDetailScreen() {
   useEffect(() => {
     if (tx) {
       setType(tx.type);
-      setAmount(tx.amount.toString());
+      setAmount(convert(tx.amount).toFixed(2));
       setSelectedCategory(tx.category);
       setNote(tx.note ?? '');
       setDate(new Date(tx.date));
     }
-  }, [tx]);
+  }, [tx, convert]);
 
   if (!tx) {
     return (
@@ -70,7 +72,7 @@ export default function TransactionDetailScreen() {
     try {
       await updateTransaction(tx.id, {
         type,
-        amount: parseFloat(amount),
+        amount: parseFloat(amount) / rate,
         category: selectedCategory,
         note: note.trim() || undefined,
         date: date.toISOString(),
@@ -113,7 +115,7 @@ export default function TransactionDetailScreen() {
               </Text>
             </View>
             <Text style={[styles.detailAmount, { color: accentColor }]}>
-              {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount, currency)}
+              {tx.type === 'income' ? '+' : '-'}{convertAndFormat(tx.amount)}
             </Text>
           </GlassCard>
 

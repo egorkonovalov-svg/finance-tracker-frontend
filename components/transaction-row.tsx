@@ -6,7 +6,8 @@ import { useRouter } from 'expo-router';
 
 import { useTheme } from '@/context/ThemeContext';
 import { useApp } from '@/context/AppContext';
-import { FontFamily, FontSize, Radius, Spacing, formatCurrency } from '@/constants/theme';
+import { useCurrency } from '@/hooks/useCurrency';
+import { FontFamily, FontSize, Radius, Spacing } from '@/constants/theme';
 import type { Transaction } from '@/types';
 
 interface Props {
@@ -16,7 +17,8 @@ interface Props {
 
 export function TransactionRow({ transaction, index = 0 }: Props) {
   const { colors } = useTheme();
-  const { categories, currency } = useApp();
+  const { categories } = useApp();
+  const { convertAndFormat } = useCurrency();
   const router = useRouter();
 
   const cat = categories.find((c) => c.name === transaction.category);
@@ -39,7 +41,7 @@ export function TransactionRow({ transaction, index = 0 }: Props) {
           },
         ]}
         onPress={() => router.push(`/transaction/${transaction.id}`)}
-        accessibilityLabel={`${transaction.type} ${transaction.category} ${formatCurrency(transaction.amount, currency)}`}
+        accessibilityLabel={`${transaction.type} ${transaction.category} ${convertAndFormat(transaction.amount)}`}
       >
         <View style={[styles.iconWrap, { backgroundColor: (cat?.color ?? '#6B7280') + '18' }]}>
           <Ionicons name={(cat?.icon as keyof typeof Ionicons.glyphMap) ?? 'ellipsis-horizontal'} size={20} color={cat?.color ?? '#6B7280'} />
@@ -56,7 +58,7 @@ export function TransactionRow({ transaction, index = 0 }: Props) {
 
         <View style={styles.right}>
           <Animated.Text style={[styles.amount, { color: amountColor }]}>
-            {sign}{formatCurrency(transaction.amount, currency)}
+            {sign}{convertAndFormat(transaction.amount)}
           </Animated.Text>
           <Animated.Text style={[styles.date, { color: colors.textMuted }]}>{displayDate}</Animated.Text>
         </View>

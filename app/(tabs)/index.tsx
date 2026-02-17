@@ -14,15 +14,17 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 import { useTheme } from '@/context/ThemeContext';
 import { useApp } from '@/context/AppContext';
+import { useCurrency } from '@/hooks/useCurrency';
 import { GlassCard } from '@/components/ui/glass-card';
 import { SummaryCard } from '@/components/summary-card';
 import { TransactionRow } from '@/components/transaction-row';
-import { FontFamily, FontSize, Palette, Spacing, formatCurrency } from '@/constants/theme';
+import { FontFamily, FontSize, Palette, Spacing } from '@/constants/theme';
 
 export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const { isDark, colors } = useTheme();
-  const { transactions, stats, currency, loading, refresh } = useApp();
+  const { transactions, stats, loading, refresh } = useApp();
+  const { convertAndFormat } = useCurrency();
 
   const recentTxs = transactions.slice(0, 5);
 
@@ -59,16 +61,16 @@ export default function DashboardScreen() {
             style={styles.balanceGradient}
           >
             <Text style={styles.balanceLabel}>Total Balance</Text>
-            <Text style={styles.balanceAmount}>{formatCurrency(totalBalance, currency)}</Text>
+            <Text style={styles.balanceAmount}>{convertAndFormat(totalBalance)}</Text>
             <View style={styles.balanceRow}>
               <View style={styles.balanceItem}>
                 <Text style={styles.balanceMiniLabel}>Income</Text>
-                <Text style={styles.balanceMiniValue}>{formatCurrency(totalIncome, currency)}</Text>
+                <Text style={styles.balanceMiniValue}>{convertAndFormat(totalIncome)}</Text>
               </View>
               <View style={[styles.balanceDivider, { backgroundColor: 'rgba(255,255,255,0.2)' }]} />
               <View style={styles.balanceItem}>
                 <Text style={styles.balanceMiniLabel}>Expenses</Text>
-                <Text style={styles.balanceMiniValue}>{formatCurrency(totalExpenses, currency)}</Text>
+                <Text style={styles.balanceMiniValue}>{convertAndFormat(totalExpenses)}</Text>
               </View>
             </View>
           </LinearGradient>
@@ -79,7 +81,7 @@ export default function DashboardScreen() {
       <View style={styles.summaryRow}>
         <SummaryCard
           title="Income"
-          value={formatCurrency(totalIncome, currency)}
+          value={convertAndFormat(totalIncome)}
           icon="arrow-down-circle"
           iconColor={Palette.emerald}
           delay={200}
@@ -87,7 +89,7 @@ export default function DashboardScreen() {
         <View style={{ width: Spacing.md }} />
         <SummaryCard
           title="Expenses"
-          value={formatCurrency(totalExpenses, currency)}
+          value={convertAndFormat(totalExpenses)}
           icon="arrow-up-circle"
           iconColor={Palette.red}
           delay={300}
@@ -95,7 +97,7 @@ export default function DashboardScreen() {
         <View style={{ width: Spacing.md }} />
         <SummaryCard
           title="Savings"
-          value={formatCurrency(totalBalance, currency)}
+          value={convertAndFormat(totalBalance)}
           icon="wallet"
           iconColor={Palette.indigo}
           delay={400}
