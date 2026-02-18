@@ -7,6 +7,14 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000/api/v
 
 export const USE_MOCK = true; // flip to false when backend is live
 
+// ─── Auth token ───────────────────────────────────────────────────────────────
+
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  authToken = token;
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface RequestOptions {
@@ -51,6 +59,7 @@ async function request<T>(
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : undefined),
       ...opts?.headers,
     },
     body: body ? JSON.stringify(body) : undefined,

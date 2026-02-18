@@ -32,6 +32,7 @@ export default function DashboardScreen() {
   const totalIncome = stats?.total_income ?? 0;
   const totalExpenses = stats?.total_expenses ?? 0;
 
+  const userName = 'Egor';
   const greeting = getGreeting();
 
   const onRefresh = useCallback(() => {
@@ -47,7 +48,7 @@ export default function DashboardScreen() {
     >
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <Animated.View entering={FadeInDown.duration(500)} style={styles.header}>
-        <Text style={[styles.greeting, { color: colors.textSecondary }]}>{greeting}</Text>
+        <Text style={[styles.greeting, { color: colors.textSecondary }]}>{greeting}, {userName}</Text>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Your Finances</Text>
       </Animated.View>
 

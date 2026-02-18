@@ -18,7 +18,7 @@ export default function WelcomeScreen() {
 
   const handleGetStarted = async () => {
     await AsyncStorage.setItem(ONBOARDED_KEY, '1');
-    router.replace('/(tabs)');
+    router.replace('/auth');
   };
 
   return (

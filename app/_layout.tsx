@@ -10,10 +10,20 @@ import 'react-native-reanimated';
 
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { AppProvider } from '@/context/AppContext';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 
 SplashScreen.preventAutoHideAsync();
 
 const ONBOARDED_KEY = '@fintrack_onboarded';
+
+function AuthGate({ hasOnboarded }: { hasOnboarded: boolean }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) return null;
+  if (!hasOnboarded) return <Redirect href="/welcome" />;
+  if (!isAuthenticated) return <Redirect href="/auth" />;
+  return null;
+}
 
 function InnerLayout({ hasOnboarded }: { hasOnboarded: boolean }) {
   const { isDark, colors } = useTheme();
@@ -26,6 +36,7 @@ function InnerLayout({ hasOnboarded }: { hasOnboarded: boolean }) {
     <NavThemeProvider value={navTheme}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="welcome" />
+        <Stack.Screen name="auth" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="transaction/[id]"
@@ -48,7 +59,7 @@ function InnerLayout({ hasOnboarded }: { hasOnboarded: boolean }) {
           }}
         />
       </Stack>
-      {!hasOnboarded && <Redirect href="/welcome" />}
+      <AuthGate hasOnboarded={hasOnboarded} />
       <StatusBar style={isDark ? 'light' : 'dark'} />
     </NavThemeProvider>
   );
@@ -80,10 +91,12 @@ export default function RootLayout() {
   if (!ready) return null;
 
   return (
-    <ThemeProvider>
-      <AppProvider>
-        <InnerLayout hasOnboarded={hasOnboarded} />
-      </AppProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <AppProvider>
+          <InnerLayout hasOnboarded={hasOnboarded} />
+        </AppProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

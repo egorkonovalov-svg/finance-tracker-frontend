@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "my-app",
-    "slug": "my-app",
+    "name": "finance-app-frontend",
+    "slug": "finance-app-frontend",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "financeappfrontend",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

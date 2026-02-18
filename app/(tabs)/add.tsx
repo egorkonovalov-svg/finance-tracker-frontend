@@ -148,6 +148,11 @@ export default function AddTransactionScreen() {
                 accessibilityLabel="Transaction amount"
               />
             </View>
+            {currency !== 'USD' && amount !== '' && parseFloat(amount) > 0 && (
+              <Text style={[styles.usdHint, { color: colors.textMuted }]}>
+                ≈ ${(parseFloat(amount) / rate).toFixed(2)} USD
+              </Text>
+            )}
           </GlassCard>
         </Animated.View>
 
@@ -294,6 +299,11 @@ const styles = StyleSheet.create({
     fontSize: FontSize['4xl'],
     borderBottomWidth: 2,
     paddingBottom: 4,
+  },
+  usdHint: {
+    fontFamily: FontFamily.body,
+    fontSize: FontSize.sm,
+    marginTop: Spacing.sm,
   },
   // Category chips
   chipRow: {
