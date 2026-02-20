@@ -26,3 +26,17 @@ export interface SocialAuthPayload {
   provider: 'google' | 'apple';
   id_token: string;
 }
+
+export interface SessionResponse {
+  session_id: string;
+  message: string;
+}
+
+export interface VerifyCodePayload {
+  session_id: string;
+  code: string;
+}
+
+export interface ResendCodePayload {
+  session_id: string;
+}

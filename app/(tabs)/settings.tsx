@@ -7,6 +7,7 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { useTheme } from '@/context/ThemeContext';
 import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
 import { GlassCard } from '@/components/ui/glass-card';
 import { FontFamily, FontSize, Palette, Radius, Spacing } from '@/constants/theme';
 import type { SupportedCurrency } from '@/types';
@@ -24,7 +25,9 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { isDark, mode, setMode, colors } = useTheme();
   const { currency, setCurrency } = useApp();
+  const { logout } = useAuth();
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   return (
     <ScrollView
@@ -134,6 +137,25 @@ export default function SettingsScreen() {
           </Text>
         </GlassCard>
       </Animated.View>
+
+      {/* ── Logout ─────────────────────────────────────────────────── */}
+      <Animated.View entering={FadeInUp.delay(500).duration(400)} style={styles.section}>
+        <Pressable
+          style={[styles.logoutBtn, { opacity: loggingOut ? 0.6 : 1 }]}
+          disabled={loggingOut}
+          onPress={async () => {
+            setLoggingOut(true);
+            await logout();
+          }}
+          accessibilityLabel="Log out"
+          accessibilityRole="button"
+        >
+          <Ionicons name="log-out-outline" size={20} color="#FFF" />
+          <Text style={styles.logoutBtnText}>
+            {loggingOut ? 'Logging out...' : 'Log Out'}
+          </Text>
+        </Pressable>
+      </Animated.View>
     </ScrollView>
   );
 }
@@ -220,5 +242,19 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.body,
     fontSize: FontSize.sm,
     textAlign: 'center',
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: Radius.lg,
+    backgroundColor: Palette.red,
+  },
+  logoutBtnText: {
+    fontFamily: FontFamily.headingMedium,
+    fontSize: FontSize.md,
+    color: '#FFF',
   },
 });

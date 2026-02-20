@@ -14,11 +14,25 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { useRouter } from 'expo-router';
 
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
+import { ApiError } from '@/services/api-client';
 import { GlassCard } from '@/components/ui/glass-card';
 import { FontFamily, FontSize, Palette, Radius, Spacing } from '@/constants/theme';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 6;
+
+function extractErrorMessage(e: unknown, fallback: string): string {
+  if (e instanceof ApiError) {
+    const body = e.body as Record<string, unknown> | null;
+    return (body?.detail as string) ?? (body?.message as string) ?? fallback;
+  }
+  if (e instanceof Error) return e.message;
+  return fallback;
+}
 
 type AuthMode = 'login' | 'signup';
 
@@ -26,6 +40,7 @@ export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { login, signup, socialAuth } = useAuth();
+  const router = useRouter();
 
   const [mode, setMode] = useState<AuthMode>('login');
   const [name, setName] = useState('');
@@ -37,20 +52,32 @@ export default function AuthScreen() {
   const isLogin = mode === 'login';
 
   const handleSubmit = async () => {
-    if (!email.trim() || !password) {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail || !password) {
       Alert.alert('Missing fields', 'Please enter your email and password.');
+      return;
+    }
+    if (!EMAIL_RE.test(trimmedEmail)) {
+      Alert.alert('Invalid email', 'Please enter a valid email address.');
+      return;
+    }
+    if (!isLogin && password.length < MIN_PASSWORD_LENGTH) {
+      Alert.alert('Weak password', `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
       return;
     }
 
     setSubmitting(true);
     try {
-      if (isLogin) {
-        await login({ email: email.trim(), password });
-      } else {
-        await signup({ email: email.trim(), password, name: name.trim() || undefined });
-      }
+      const res = isLogin
+        ? await login({ email: trimmedEmail, password })
+        : await signup({ email: trimmedEmail, password, name: name.trim() || undefined });
+      router.push({
+        pathname: '/verify-code',
+        params: { session_id: res.session_id, email: trimmedEmail },
+      });
     } catch (e: unknown) {
-      Alert.alert('Error', (e as Error).message ?? 'Something went wrong.');
+      Alert.alert('Error', extractErrorMessage(e, 'Something went wrong.'));
     } finally {
       setSubmitting(false);
     }
@@ -61,7 +88,7 @@ export default function AuthScreen() {
     try {
       await socialAuth({ provider: 'google', id_token: 'google-mock-token' });
     } catch (e: unknown) {
-      Alert.alert('Error', (e as Error).message ?? 'Google sign-in failed.');
+      Alert.alert('Error', extractErrorMessage(e, 'Google sign-in failed.'));
     } finally {
       setSubmitting(false);
     }
@@ -80,9 +107,9 @@ export default function AuthScreen() {
         await socialAuth({ provider: 'apple', id_token: credential.identityToken });
       }
     } catch (e: unknown) {
-      const err = e as { code?: string; message?: string };
+      const err = e as { code?: string };
       if (err.code !== 'ERR_REQUEST_CANCELED') {
-        Alert.alert('Error', err.message ?? 'Apple sign-in failed.');
+        Alert.alert('Error', extractErrorMessage(e, 'Apple sign-in failed.'));
       }
     } finally {
       setSubmitting(false);

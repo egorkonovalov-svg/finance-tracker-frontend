@@ -2,7 +2,15 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setAuthToken } from '@/services/api-client';
 import { authService } from '@/services/auth';
-import type { User, LoginPayload, SignupPayload, SocialAuthPayload } from '@/types/auth';
+import type {
+  User,
+  LoginPayload,
+  SignupPayload,
+  SocialAuthPayload,
+  SessionResponse,
+  VerifyCodePayload,
+  ResendCodePayload,
+} from '@/types/auth';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -11,8 +19,10 @@ interface AuthContextValue {
   token: string | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (payload: LoginPayload) => Promise<void>;
-  signup: (payload: SignupPayload) => Promise<void>;
+  login: (payload: LoginPayload) => Promise<SessionResponse>;
+  signup: (payload: SignupPayload) => Promise<SessionResponse>;
+  verifyCode: (payload: VerifyCodePayload) => Promise<void>;
+  resendCode: (payload: ResendCodePayload) => Promise<SessionResponse>;
   socialAuth: (payload: SocialAuthPayload) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -57,17 +67,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  const login = useCallback(async (payload: LoginPayload) => {
-    const res = await authService.login(payload);
+  const login = useCallback(async (payload: LoginPayload): Promise<SessionResponse> => {
+    return authService.login(payload);
+  }, []);
+
+  const signup = useCallback(async (payload: SignupPayload): Promise<SessionResponse> => {
+    return authService.signup(payload);
+  }, []);
+
+  const verifyCode = useCallback(async (payload: VerifyCodePayload) => {
+    const res = await authService.verifyCode(payload);
     await persistToken(res.access_token);
     setUser(res.user);
   }, [persistToken]);
 
-  const signup = useCallback(async (payload: SignupPayload) => {
-    const res = await authService.signup(payload);
-    await persistToken(res.access_token);
-    setUser(res.user);
-  }, [persistToken]);
+  const resendCode = useCallback(async (payload: ResendCodePayload): Promise<SessionResponse> => {
+    return authService.resendCode(payload);
+  }, []);
 
   const socialAuth = useCallback(async (payload: SocialAuthPayload) => {
     const res = await authService.socialAuth(payload);
@@ -94,6 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading,
         login,
         signup,
+        verifyCode,
+        resendCode,
         socialAuth,
         logout,
       }}

@@ -1,5 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
-import { Redirect, Stack } from 'expo-router';
+import { Stack, useSegments, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
@@ -18,10 +18,23 @@ const ONBOARDED_KEY = '@fintrack_onboarded';
 
 function AuthGate({ hasOnboarded }: { hasOnboarded: boolean }) {
   const { isAuthenticated, loading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
 
-  if (loading) return null;
-  if (!hasOnboarded) return <Redirect href="/welcome" />;
-  if (!isAuthenticated) return <Redirect href="/auth" />;
+  useEffect(() => {
+    if (loading) return;
+
+    const inAuthGroup = segments[0] === 'auth' || segments[0] === 'welcome' || segments[0] === 'verify-code';
+
+    if (!hasOnboarded) {
+      router.replace('/welcome');
+    } else if (!isAuthenticated && !inAuthGroup) {
+      router.replace('/auth');
+    } else if (isAuthenticated && inAuthGroup) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, loading, segments, hasOnboarded, router]);
+
   return null;
 }
 
@@ -37,6 +50,7 @@ function InnerLayout({ hasOnboarded }: { hasOnboarded: boolean }) {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="welcome" />
         <Stack.Screen name="auth" />
+        <Stack.Screen name="verify-code" options={{ gestureEnabled: false }} />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="transaction/[id]"
